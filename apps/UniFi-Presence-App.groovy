@@ -13,7 +13,7 @@
 definition(
     name: "UniFi Presence Integration",
     namespace: "unifiPresence",
-    author: "Custom",
+    author: "babgvant",
     description: "Local presence detection via a UniFi OS console's REST API",
     category: "Convenience",
     iconUrl: "",

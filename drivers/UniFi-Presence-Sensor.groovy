@@ -5,7 +5,7 @@
  *  State is pushed entirely by the parent "UniFi Presence Integration" app.
  */
 metadata {
-    definition(name: "UniFi Presence Sensor", namespace: "unifiPresence", author: "Custom") {
+    definition(name: "UniFi Presence Sensor", namespace: "unifiPresence", author: "babgvant") {
         capability "PresenceSensor"
         capability "Sensor"
 
