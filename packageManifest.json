@@ -1,0 +1,32 @@
+{
+    "packageName": "UniFi Presence Integration",
+    "author": "babgvant",
+    "version": "1.0.0",
+    "minimumHEVersion": "2.3.4",
+    "dateReleased": "2026-08-03",
+    "gitHubUrl": "https://github.com/babgvant/hubitat-unifi-presence",
+    "documentationLink": "https://github.com/babgvant/hubitat-unifi-presence/blob/master/README.md",
+    "communityLink": "",
+    "apps": [
+        {
+            "id": "a24f27ed-335b-437a-87d3-45dc32ff52f7",
+            "location": "https://raw.githubusercontent.com/babgvant/hubitat-unifi-presence/master/apps/UniFi-Presence-App.groovy",
+            "name": "UniFi Presence Integration",
+            "namespace": "unifiPresence",
+            "required": true,
+            "oauth": false,
+            "primary": true,
+            "version": "1.0.0"
+        }
+    ],
+    "drivers": [
+        {
+            "id": "4624a6ee-3520-4074-8768-90c979fc1991",
+            "location": "https://raw.githubusercontent.com/babgvant/hubitat-unifi-presence/master/drivers/UniFi-Presence-Sensor.groovy",
+            "name": "UniFi Presence Sensor",
+            "namespace": "unifiPresence",
+            "required": true,
+            "version": "1.0.0"
+        }
+    ]
+}
