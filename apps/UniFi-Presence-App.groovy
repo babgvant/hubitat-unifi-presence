@@ -121,6 +121,10 @@ def loginResponseHandler(resp, data) {
         return
     }
 
+    if (settings.traceLogging) {
+        log.debug "UniFi Presence: login response status ${resp.status}, headers: ${resp.headers}"
+    }
+
     Map extracted = extractSession(resp.headers)
     if (!extracted.cookie) {
         logWarn("Login succeeded but no session cookie was found in the response headers")
@@ -128,6 +132,9 @@ def loginResponseHandler(resp, data) {
     state.cookie = extracted.cookie
     state.csrfToken = extracted.csrfToken
     logDebug("Login OK, csrfToken present: ${extracted.csrfToken != null}")
+    if (settings.traceLogging) {
+        log.debug "UniFi Presence: captured cookie: ${extracted.cookie}, csrfToken: ${extracted.csrfToken}"
+    }
 
     fetchClients()
 }
@@ -141,13 +148,16 @@ def fetchClients() {
         path   : "/proxy/network/api/s/${settings.site ?: 'default'}/stat/sta",
         headers: headers
     ]
-    if (settings.traceLogging) log.debug "UniFi Presence: GET ${params.path}"
+    if (settings.traceLogging) log.debug "UniFi Presence: GET ${params.path}, headers: ${headers}"
     asynchttpGet("clientsResponseHandler", params)
 }
 
 def clientsResponseHandler(resp, data) {
     if (resp.hasError() || resp.status == 401) {
         logWarn("Client fetch failed (status ${resp.status}); will re-login next cycle")
+        if (settings.traceLogging) {
+            log.debug "UniFi Presence: failed response headers: ${resp.headers}, body: ${resp.getErrorMessage() ?: resp.getData()}"
+        }
         state.cookie = null
         state.csrfToken = null
         schedulePollNext()
