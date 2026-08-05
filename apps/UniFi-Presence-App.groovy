@@ -194,6 +194,11 @@ static Map extractSession(Map headers) {
     (headers ?: [:]).each { String k, v ->
         String key = k?.toLowerCase()
         String val = v?.toString()
+        // Hubitat's asynchttp headers map returns each value as the raw header
+        // line ("HeaderName: value"), so strip the redundant name prefix back off.
+        if (val && k && val.toLowerCase().startsWith("${key}:")) {
+            val = val.substring(k.length() + 1).trim()
+        }
         if (key == "set-cookie") {
             String pair = val?.split(";")?.getAt(0)
             if (pair) cookie = cookie ? "${cookie}; ${pair}" : pair

@@ -27,24 +27,16 @@ presence-sensor devices.
 
 ## Status
 
-Verified offline (Groovy compile check through class generation, plus unit tests for
-device-list parsing, MAC/name matching, and session-header extraction). **Not yet
-verified against a real UniFi OS console.** The riskiest unverified piece is the
-login/session handshake:
+Verified against a real UniFi OS console: login, session-cookie/CSRF handling, and
+client polling all confirmed working, with the session persisting across poll cycles
+as intended.
 
 - Login is `POST /api/auth/login` with a JSON body; UniFi OS returns a session cookie
-  and, on some firmware versions, a CSRF token that must be echoed back as
-  `X-Csrf-Token` on later requests. This integration captures both automatically from
-  the login response headers, whichever are present.
+  and a CSRF token that must be echoed back as `X-Csrf-Token` on later requests. This
+  integration captures both automatically from the login response headers.
 - The client list is fetched from `/proxy/network/api/s/<site>/stat/sta` — the
   `/proxy/network` prefix is specific to UniFi OS consoles and differs from a classic
   self-hosted controller's `/api/s/<site>/stat/sta`. If you're on a classic controller
   instead, this integration needs that path changed.
-- Unlike re-logging in on every poll cycle, this integration keeps the session across
-  polls and only re-authenticates when a request comes back unauthorized — cheaper,
-  but means a session-expiry edge case could theoretically go unnoticed for one poll
-  cycle longer than a naive per-cycle relogin would.
-
-Before relying on it, enable trace logging on the app and confirm against the
-controller's own request logs (or a browser dev-tools session against the same login
-flow) that the cookie/CSRF handling actually works on your firmware version.
+- The session is kept across polls and only re-authenticated when a request comes
+  back unauthorized, rather than re-logging in on every poll cycle.

@@ -1,9 +1,10 @@
 {
     "packageName": "UniFi Presence Integration",
     "author": "babgvant",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "minimumHEVersion": "2.3.4",
-    "dateReleased": "2026-08-03",
+    "dateReleased": "2026-08-04",
+    "releaseNotes": "Initial release.",
     "gitHubUrl": "https://github.com/babgvant/hubitat-unifi-presence",
     "documentationLink": "https://github.com/babgvant/hubitat-unifi-presence/blob/master/README.md",
     "communityLink": "",
@@ -16,7 +17,7 @@
             "required": true,
             "oauth": false,
             "primary": true,
-            "version": "1.0.0"
+            "version": "1.0.1"
         }
     ],
     "drivers": [
