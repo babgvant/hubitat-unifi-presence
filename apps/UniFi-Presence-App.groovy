@@ -81,8 +81,12 @@ private void ensureDeviceChildren() {
 
 /* ---------------- Poll cycle ---------------- */
 
+private static final long SESSION_REFRESH_BUFFER_MS = 60000
+
 def poll() {
-    if (state.cookie) {
+    boolean sessionFresh = state.cookie &&
+        (!state.sessionExpiresAt || now() < (state.sessionExpiresAt as Long) - SESSION_REFRESH_BUFFER_MS)
+    if (sessionFresh) {
         fetchClients()
     } else {
         login()
@@ -101,7 +105,7 @@ private Map httpBaseParams() {
     ]
 }
 
-def login() {
+def login(Map data = [:]) {
     Map params = httpBaseParams() + [
         path       : "/api/auth/login",
         contentType: "application/json",
@@ -109,7 +113,7 @@ def login() {
         body       : [username: settings.username, password: settings.password]
     ]
     if (settings.traceLogging) log.debug "UniFi Presence: POST ${params.path}"
-    asynchttpPost("loginResponseHandler", params)
+    asynchttpPost("loginResponseHandler", params, data)
 }
 
 def loginResponseHandler(resp, data) {
@@ -117,6 +121,7 @@ def loginResponseHandler(resp, data) {
         logWarn("Login failed: ${resp.getErrorMessage()}")
         state.cookie = null
         state.csrfToken = null
+        state.sessionExpiresAt = null
         schedulePollNext()
         return
     }
@@ -131,15 +136,16 @@ def loginResponseHandler(resp, data) {
     }
     state.cookie = extracted.cookie
     state.csrfToken = extracted.csrfToken
-    logDebug("Login OK, csrfToken present: ${extracted.csrfToken != null}")
+    state.sessionExpiresAt = extracted.expiresAt
+    logDebug("Login OK, csrfToken present: ${extracted.csrfToken != null}, expiresAt: ${extracted.expiresAt}")
     if (settings.traceLogging) {
         log.debug "UniFi Presence: captured cookie: ${extracted.cookie}, csrfToken: ${extracted.csrfToken}"
     }
 
-    fetchClients()
+    fetchClients(data)
 }
 
-def fetchClients() {
+def fetchClients(Map data = [:]) {
     Map headers = [:]
     if (state.cookie) headers["Cookie"] = state.cookie
     if (state.csrfToken) headers["X-Csrf-Token"] = state.csrfToken
@@ -149,18 +155,25 @@ def fetchClients() {
         headers: headers
     ]
     if (settings.traceLogging) log.debug "UniFi Presence: GET ${params.path}, headers: ${headers}"
-    asynchttpGet("clientsResponseHandler", params)
+    asynchttpGet("clientsResponseHandler", params, data)
 }
 
 def clientsResponseHandler(resp, data) {
     if (resp.hasError() || resp.status == 401) {
-        logWarn("Client fetch failed (status ${resp.status}); will re-login next cycle")
+        state.cookie = null
+        state.csrfToken = null
+        state.sessionExpiresAt = null
         if (settings.traceLogging) {
             log.debug "UniFi Presence: failed response headers: ${resp.headers}, body: ${resp.getErrorMessage() ?: resp.getData()}"
         }
-        state.cookie = null
-        state.csrfToken = null
-        schedulePollNext()
+
+        if (resp.status == 401 && !(data?.retried)) {
+            logWarn("Client fetch failed (status 401); retrying with a fresh login")
+            login([retried: true])
+        } else {
+            logWarn("Client fetch failed (status ${resp.status}); will re-login next cycle")
+            schedulePollNext()
+        }
         return
     }
 
@@ -190,6 +203,7 @@ private void updatePresence(List clients) {
 static Map extractSession(Map headers) {
     String cookie = null
     String csrf = null
+    Long expiresAt = null
 
     (headers ?: [:]).each { String k, v ->
         String key = k?.toLowerCase()
@@ -202,12 +216,14 @@ static Map extractSession(Map headers) {
         if (key == "set-cookie") {
             String pair = val?.split(";")?.getAt(0)
             if (pair) cookie = cookie ? "${cookie}; ${pair}" : pair
+        } else if (key == "x-token-expire-time") {
+            try { expiresAt = Long.parseLong(val) } catch (ignored) { }
         } else if (key?.contains("csrf")) {
             csrf = val
         }
     }
 
-    return [cookie: cookie, csrfToken: csrf]
+    return [cookie: cookie, csrfToken: csrf, expiresAt: expiresAt]
 }
 
 static List<Map> parseDevices(String raw) {
