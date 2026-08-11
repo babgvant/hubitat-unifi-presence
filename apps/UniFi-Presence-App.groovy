@@ -81,11 +81,10 @@ private void ensureDeviceChildren() {
 
 /* ---------------- Poll cycle ---------------- */
 
-private static final long SESSION_REFRESH_BUFFER_MS = 60000
-
 def poll() {
+    long sessionRefreshBufferMs = 60000
     boolean sessionFresh = state.cookie &&
-        (!state.sessionExpiresAt || now() < (state.sessionExpiresAt as Long) - SESSION_REFRESH_BUFFER_MS)
+        (!state.sessionExpiresAt || now() < (state.sessionExpiresAt as Long) - sessionRefreshBufferMs)
     if (sessionFresh) {
         fetchClients()
     } else {
