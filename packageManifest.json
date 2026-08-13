@@ -1,10 +1,10 @@
 {
     "packageName": "UniFi Presence Integration",
     "author": "babgvant",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "minimumHEVersion": "2.3.4",
     "dateReleased": "2026-08-12",
-    "releaseNotes": "Fix cookie header parsing and add automatic re-login on 401 responses.",
+    "releaseNotes": "Fix duplicate presence sensors being created when a device's identifier changes; child devices are now keyed by label and orphaned children are cleaned up automatically.",
     "gitHubUrl": "https://github.com/babgvant/hubitat-unifi-presence",
     "documentationLink": "https://github.com/babgvant/hubitat-unifi-presence/blob/master/README.md",
     "communityLink": "",
@@ -17,7 +17,7 @@
             "required": true,
             "oauth": false,
             "primary": true,
-            "version": "1.0.2"
+            "version": "1.0.3"
         }
     ],
     "drivers": [

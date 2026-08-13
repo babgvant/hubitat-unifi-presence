@@ -69,14 +69,28 @@ def initialize() {
 /* ---------------- Child device management ---------------- */
 
 private void ensureDeviceChildren() {
-    parseDevices(settings.devices).each { Map d ->
-        String dni = "unifi-presence-${sanitize(d.identifier)}"
+    List<Map> devices = parseDevices(settings.devices)
+    Set<String> desiredDnis = devices.collect { childDni(it) } as Set
+
+    devices.each { Map d ->
+        String dni = childDni(d)
         if (!getChildDevice(dni)) {
             addChildDevice("unifiPresence", "UniFi Presence Sensor", dni,
                 [name: "UniFi Presence", label: d.label, isComponent: true])
             logInfo("Created presence device for ${d.label}")
         }
     }
+
+    getChildDevices()?.each { child ->
+        if (!desiredDnis.contains(child.deviceNetworkId)) {
+            logInfo("Removing orphaned presence device ${child.deviceNetworkId}")
+            deleteChildDevice(child.deviceNetworkId)
+        }
+    }
+}
+
+private String childDni(Map d) {
+    return "unifi-presence-${sanitize(d.label)}"
 }
 
 /* ---------------- Poll cycle ---------------- */
@@ -191,7 +205,7 @@ def clientsResponseHandler(resp, data) {
 private void updatePresence(List clients) {
     parseDevices(settings.devices).each { Map d ->
         boolean present = matchClient(d, clients)
-        String dni = "unifi-presence-${sanitize(d.identifier)}"
+        String dni = childDni(d)
         getChildDevice(dni)?.setPresence(present)
         logDebug("${d.label}: ${present ? 'present' : 'not present'}")
     }
